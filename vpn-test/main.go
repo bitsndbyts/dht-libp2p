@@ -6,13 +6,13 @@ import (
 	"crypto/rand"
 	"flag"
 	"fmt"
-	"os"
-
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-crypto"
 	inet "github.com/libp2p/go-libp2p-net"
 	protocol "github.com/libp2p/go-libp2p-protocol"
 	"github.com/multiformats/go-multiaddr"
+	"io"
+	"os"
 )
 
 func handleStream(stream inet.Stream) {
@@ -48,16 +48,33 @@ func readData(rw *bufio.ReadWriter) {
 }
 
 func writeData(rw *bufio.ReadWriter) {
-	stdReader := bufio.NewReader(os.Stdin)
-
+	buf, err := os.OpenFile("/home/bits/Desktop/00001.vcf", os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		fmt.Println("Error reading file error")
+		panic(err)
+	}
+	stdReader := bufio.NewReader(buf)
+	fi,err:=os.Create("/home/bits/Desktop/out.txt")
+	if err != nil {
+		fmt.Println("Error file creating")
+	}
+	
 	for {
-		fmt.Print("> ")
+
+		//b,err := stdReader.ReadBytes('\n')
+
+
 		sendData, err := stdReader.ReadString('\n')
-		if err != nil {
+		if err == io.EOF {
 			fmt.Println("Error reading from stdin")
-			panic(err)
+			break
 		}
 
+		_,err=fi.Write([]byte(sendData))
+		if err != nil {
+			fmt.Println("Error writing of file")
+			panic(err)
+		}
 		_, err = rw.WriteString(fmt.Sprintf("%s\n", sendData))
 		if err != nil {
 			fmt.Println("Error writing to buffer")
@@ -69,6 +86,7 @@ func writeData(rw *bufio.ReadWriter) {
 			panic(err)
 		}
 	}
+
 }
 
 func main() {
